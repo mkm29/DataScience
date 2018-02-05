@@ -1,7 +1,9 @@
-## Put comments here that give an overall description of what your
-## functions do
-
-## Write a short comment describing this function
+##################################################
+## Project: R Programming, Assignment 2
+## Script purpose: capitalize on caching matrix inverses
+## Date: 2/5/18
+## Author: Mitch Murphy
+##################################################
 
 makeCacheMatrix <- function(x = matrix()) {
   inv <- NULL #placeholder for inverse
