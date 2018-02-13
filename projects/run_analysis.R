@@ -109,4 +109,4 @@ total <- reshape2::melt(data = total, id = c("SubjectNum", "Activity"))
 total <- reshape2::dcast(data = total, SubjectNum + Activity ~ variable, fun.aggregate = mean)
 
 ## Now save (write) this data table to disk
-data.table::fwrite(x = total, file = paste(dataDirectory, "tidyData.txt", sep = "/"), quote = FALSE)
+data.table::fwrite(x = total, file = paste(dataDirectory, "tidyData.txt", sep = "/"), quote = FALSE, row.names = F)
