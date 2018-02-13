@@ -81,10 +81,11 @@ Human Activity Recognition Using Smartphones Data Set
 
 ## Activity
 
-|classLabels| activityName|
-|1| WALKING|
-|2| WALKING_UPSTAIRS|
-|3| WALKING_DOWNSTAIRS|
-|4| SITTING|
-|5| STANDING|
-|6|LAYING|
+|    activityNumber     |    activityName    |
+|-----------------------|:------------------:|
+|           1           |       WALKING      |
+|           2           |  WALKING_UPSTAIRS  |
+|           3           | WALKING_DOWNSTAIRS |
+|           4           |       SITTING      |
+|           5           |      STANDING      |
+|           6           |       LAYING       |
