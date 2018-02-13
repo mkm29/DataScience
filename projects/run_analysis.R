@@ -19,13 +19,40 @@ init <- function(base_directory = "~/Desktop/DataScience/coursera/") {
 }
 
 
+
+downloadData <- function() {
+  # Ensure that the UCI data exists in the current working directory.
+  # If it does not, download the zip file and then unzip it
+  # 
+  # Args: nothing
+  # Returns: nothing
+  
+  dataDirectory <<- paste(getwd(), "data/UCI HAR Dataset", sep = "/")
+  
+  if(!dir.exists(dataDirectory)) {
+    download.file("https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip", destfile = "data/UCI HAR Dataset.zip")
+    unzip(paste0(dataDirectory, ".zip"))
+  }
+  # first check if the data is already there. If not, download it
+}
+
+
 ## This function will read in both the train and test sets
 ## and cleans it up so we just have a train and test data.tables
 ## Not split into 2 functions due to how I use lexical scoping
 
 readAndCleanData <- function() {
-  # "/Users/mitchellmurphy/Desktop/DataScience/coursera/data/UCI_HAR_Dataset/"
-  dataDirectory <- paste(getwd(),"data/UCI_HAR_Dataset/",sep = "/")
+  # Read in the raw, unformatted data
+  # "Clean it up" by only extracting the necessary columns (features)
+  #  Repeat this process for both the train and test data sets
+  # 
+  # Args: none
+  # 
+  # Returns: officially nothing is returned from this function,
+  #   however the formatted train and test data sets are added to the global environment
+  
+  
+  dataDirectory <- paste(getwd(),"data/UCI HAR Dataset/",sep = "/")
   # Read data
   activityLabels <<- fread(paste0(dataDirectory, "activity_labels.txt"), col.names = c("classLabels", "activityName"))
   
@@ -53,7 +80,7 @@ readAndCleanData <- function() {
 
 init()
 # this function will do most of the work for us (reading and cleaning up the data)
-
+downloadData()
 readAndCleanData()
 
 
@@ -76,3 +103,6 @@ total$Activity <- factor(total$Activity, levels = activityLabels[["classLabels"]
 ## This will be our final, "tidy" data set
 total <- reshape2::melt(data = total, id = c("SubjectNum", "Activity"))
 total <- reshape2::dcast(data = total, SubjectNum + Activity ~ variable, fun.aggregate = mean)
+
+## Now save (write) this data table to disk
+write.table(total, file = paste(dataDirectory, "tidyData.txt", sep = "/"))
