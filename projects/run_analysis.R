@@ -8,37 +8,71 @@
 ## Author: Mitch Murphy
 ##################################################
 
+init <- function(base_directory = "~/Desktop/DataScience/coursera/") {
+  # Set the working directory
+  setwd(base_directory)
+  
+  # Load needed packages
+  library(data.table)
+  library(reshape2)
+  
+}
+
+
+## This function will read in both the train and test sets
+## and cleans it up so we just have a train and test data.tables
+## Not split into 2 functions due to how I use lexical scoping
+
+readAndCleanData <- function() {
+  # "/Users/mitchellmurphy/Desktop/DataScience/coursera/data/UCI_HAR_Dataset/"
+  dataDirectory <- paste(getwd(),"data/UCI_HAR_Dataset/",sep = "/")
+  # Read data
+  activityLabels <<- fread(paste0(dataDirectory, "activity_labels.txt"), col.names = c("classLabels", "activityName"))
+  
+  features <- fread(paste0(dataDirectory, "features.txt"), col.names = c("index", "featureNames"))
+  featuresToInclude <- grep("(mean|std)\\(\\)", features[, featureNames])
+  measurements <- features[featuresToInclude,featureNames]
+  measurements <- gsub('[()]', '', measurements)
+  
+  train.x <- fread(paste0(dataDirectory,"train/X_train.txt"))[, featuresToInclude, with = FALSE]
+  data.table::setnames(train.x, colnames(train.x), measurements)
+  train.y <- fread(paste0(dataDirectory,"train/Y_train.txt"), col.names = c("Activity"))
+  train.subjects <- fread(paste0(dataDirectory,"train/subject_train.txt"), col.names = c("SubjectNum"))
+  
+  train <<- cbind(train.subjects, train.y, train.x)
+  
+  
+  # Now load up the test data
+  test.x <- fread(paste0(dataDirectory,"test/X_test.txt"))[, featuresToInclude, with = FALSE]
+  data.table::setnames(test.x, colnames(test.x), measurements)
+  test.y <- fread(paste0(dataDirectory,"test/Y_test.txt"), col.names = c("Activity"))
+  test.subjects <- fread(paste0(dataDirectory,"test/subject_test.txt"), col.names = c("SubjectNum"))
+  
+  test <<- cbind(test.subjects, test.y, test.x)
+}
+
+init()
+# this function will do most of the work for us (reading and cleaning up the data)
+
+readAndCleanData()
+
 
 ## Merges the training and the test sets to create one data set.
+if(is.null(train) & is.null(test)) {
+  stop("train and test variables do not exist. Make sure you first call readAndClean()")
+}
+total <- rbind(train, test)
 
+## Coerce the SubjectNum column into factors
+total$SubjectNum <- as.factor(total$SubjectNum)
 
+# Now let us map the Activity number into its equiv name (read from activities.txt) in activitesLabel list
 
-
-
-
-
-## Extracts only the measurements on the mean and standard deviation for each measurement.
-
-
-
-
-
-
-
-## Uses descriptive activity names to name the activities in the data set
-
-
-
-
-
-
-
-## Appropriately labels the data set with descriptive variable names.
-
-
-
-
+total$Activity <- factor(total$Activity, levels = activityLabels[["classLabels"]], labels = activityLabels[["activityName"]])
 
 
 
 ## From the data set in step 4, creates a second, independent tidy data set with the average of each variable for each activity and each subject
+## This will be our final, "tidy" data set
+total <- reshape2::melt(data = total, id = c("SubjectNum", "Activity"))
+total <- reshape2::dcast(data = total, SubjectNum + Activity ~ variable, fun.aggregate = mean)
