@@ -57,7 +57,7 @@ readAndCleanData <- function() {
   activityLabels <<- fread(paste0(dataDirectory, "activity_labels.txt"), col.names = c("classLabels", "activityName"))
   
   features <- fread(paste0(dataDirectory, "features.txt"), col.names = c("index", "featureNames"))
-  featuresToInclude <- grep("(mean|std)\\(\\)", features[, featureNames])
+  featuresToInclude <- grep(".*mean.*|.*std.*", features[, featureNames])
   measurements <- features[featuresToInclude,featureNames]
   measurements <- gsub('[()]', '', measurements)
   
@@ -89,9 +89,13 @@ if(is.null(train) & is.null(test)) {
   stop("train and test variables do not exist. Make sure you first call readAndClean()")
 }
 total <- rbind(train, test)
+rm(train, test)
+
 
 ## Coerce the SubjectNum column into factors
 total$SubjectNum <- as.factor(total$SubjectNum)
+#total$SubjectNum <- NULL
+
 
 # Now let us map the Activity number into its equiv name (read from activities.txt) in activitesLabel list
 
@@ -105,4 +109,4 @@ total <- reshape2::melt(data = total, id = c("SubjectNum", "Activity"))
 total <- reshape2::dcast(data = total, SubjectNum + Activity ~ variable, fun.aggregate = mean)
 
 ## Now save (write) this data table to disk
-write.table(total, file = paste(dataDirectory, "tidyData.txt", sep = "/"))
+write(total, file = paste(dataDirectory, "tidyData.txt", sep = "/"))
