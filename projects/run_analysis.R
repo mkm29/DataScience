@@ -47,7 +47,7 @@ downloadData <- function() {
 ## and cleans it up so we just have a train and test data.tables
 ## Not split into 2 functions due to how I use lexical scoping
 
-readAndCleanData <- function() {
+readAndCleanData <- function(reduceFeatures = FALSE) {
   # Read in the raw, unformatted data
   # "Clean it up" by only extracting the necessary columns (features)
   #  Repeat this process for both the train and test data sets
@@ -59,8 +59,15 @@ readAndCleanData <- function() {
   # Read data
   activityLabels <<- fread(paste0(dataDirectory, "activity_labels.txt"), col.names = c("classLabels", "activityName"))
   
-  features <- fread(paste0(dataDirectory, "features.txt"), col.names = c("index", "featureNames"))
-  featuresToInclude <- grep(".*mean.*|.*std.*|.*max.*", features[, featureNames])
+  features <<- fread(paste0(dataDirectory, "features.txt"), col.names = c("index", "featureNames"))
+  
+  featuresToInclude <<- as.integer(row.names(features))
+  
+  if(reduceFeatures) {
+    featuresToInclude <- grep(".*mean.*|.*std.*|.*max.*", features[, featureNames])
+  }
+  
+  
   measurements <- features[featuresToInclude,featureNames]
   measurements <- gsub('[()]', '', measurements)
   
@@ -90,7 +97,7 @@ readAndCleanData()
 
 
 ## Coerce the SubjectNum column into factors
-total$SubjectNum <- as.factor(total$SubjectNum)
+samsungData$SubjectNum <- as.factor(samsungData$SubjectNum)
 #total$SubjectNum <- NULL
 
 
@@ -112,4 +119,41 @@ plot(sub1$`tBodyAcc-max-Y`, pch = 19, col = sub1$Activity, ylab = "tBodyAcc-max-
 # there are a lot of features...lets try to reduce dimensionality by clustering
 
 source("myplclust.R")
+distanceMatrix <- dist(sub1[,9:11])
+hclustering <- hclust(distanceMatrix)
+myplclust(hclustering, lab.col = 1:6)
 
+svd1 <- svd(scale(sub1[, -c(1,2,562,563)]))
+par(mfrow = c(1,3))
+plot(svd1$u[,1], col = sub1$Activity, pch = 19)
+plot(svd1$u[,2], col = sub1$Activity, pch = 19)
+plot.new()
+legend("bottomright", legend = activityLabels$activityName, col = activityLabels$classLabels, pch = 1)
+
+# the first singular vector seperates moving and non-moving activities. not so sure about the 2nd
+# lets try to find maximum contributor
+par(mfrow = c(1,1))
+plot(svd1$v[,2], pch = 19)
+
+## NOT RIGHT
+maxContrib <- which.max(svd1$v[,2])
+distanceMatrix <- dist(sub1[, c(9:11, maxContrib)])
+hclustering <- hclust(distanceMatrix)
+myplclust(hclustering, lab.col = 1:6)
+
+# use k-means clustering to see if we can seperate out the individual activities
+kClust <- kmeans(sub1[,-c(1,2,562,563)], centers = 6, nstart = 100)
+table(kClust$cluster, sub1$Activity)
+
+# each time you run the above code, kmeans will produce different clusters. our goal is to seperate out the activites
+# so pick the cluster that bins each activity in the fewest number of clusters
+# The resulting clusters are pretty good (at least for moving)
+# from these cluster, if set of observations fall in clusters 2,4 or 5 the subject is moving
+# if in clusters 1,3 and 6 the subject is not moving
+#WALKING WALKING_UPSTAIRS WALKING_DOWNSTAIRS SITTING STANDING LAYING
+#1       0                0                  0      10        2     18
+#2       0               53                  0       0        0      3
+#3       0                0                  0      37       51      0
+#4      95                0                  0       0        0      0
+#5       0                0                 49       0        0      0
+#6       0                0                  0       0        0     29
