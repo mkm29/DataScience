@@ -62,7 +62,7 @@ load_data <- function(zipURL = "https://d396qusza40orc.cloudfront.net/exdata%2Fd
 
 plot1 <- function() {
   if(is.null(powerData)) {
-    warning("Power data is not loaded.")
+    stop("Power data is not loaded.")
   } else {
     png(paste(figureDirectory, "plot1.png", sep = "/"))
     hist(powerData$Global_active_power, main="Global Active Power", col = "red", xlab="Global Active Power (kilowatts)", ylab="Frequency")

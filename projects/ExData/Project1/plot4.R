@@ -62,7 +62,7 @@ load_data <- function(zipURL = "https://d396qusza40orc.cloudfront.net/exdata%2Fd
 
 plot4 <- function() {
   if(is.null(powerData)) {
-    warning("Power data is not loaded.")
+    stop("Power data is not loaded.")
   } else {
     png(paste(figureDirectory, "plot4.png", sep = "/"))
     

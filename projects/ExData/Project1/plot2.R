@@ -62,7 +62,7 @@ load_data <- function(zipURL = "https://d396qusza40orc.cloudfront.net/exdata%2Fd
 
 plot2 <- function() {
   if(is.null(powerData)) {
-    warning("Power data is not loaded.")
+    stop("Power data is not loaded.")
   } else {
     png(paste(figureDirectory, "plot2.png", sep = "/"))
     plot(x = powerData$DateTime, y = powerData$Global_active_power, type="l", xlab="", ylab="Global Active Power (kilowatts)")
