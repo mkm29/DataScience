@@ -255,7 +255,6 @@ analysis <- function() {
   # ave seen decreases in emissions from 1999–2008 for Baltimore City? Which have seen increases in emissions from 1999–2008? 
   # Use the ggplot2 plotting system to make a plot answer this question.
   baltimore.types <- baltimore %>% group_by(type, year) %>% summarise(Mean = mean(Emissions), Median = median(Emissions))
-  class(baltimore.types$type)
   baltimore.types$type <- with(baltimore.types, as.factor(type))
   
   setwd(as.character(Resources$FigureDirectory))
