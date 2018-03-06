@@ -1,4 +1,3 @@
-library(data.table)
 library(dplyr)
 library(ggplot2)
 library(grid)
@@ -16,20 +15,22 @@ SCC <- readRDS("Source_Classification_Code.rds")
 NEI <- readRDS("summarySCC_PM25.rds")
 NEI.SCC <- merge.data.frame(NEI, SCC, by = "SCC")
 baltimore <- subset(NEI.SCC, fips == "24510")
-baltimore.types <- baltimore %>% group_by(type, year) %>% summarise(Mean = mean(Emissions), Median = median(Emissions))
+baltimore.types <- baltimore %>% group_by(type, year) %>% summarise(Total = sum(Emissions), Mean = mean(Emissions), Median = median(Emissions))
 baltimore.types$type <- with(baltimore.types, as.factor(type))
 
 setwd("../")
 png(filename = "plot3.png", width = 1000, height = 800)
 # for this plot, you will have 4 lines (one for each type), the x axis is the year and the y is the mean emissions
-p1 <- ggplot(baltimore.types, aes(year, log10(Mean))) + 
+#baltimore.types$Total <- with(baltimore.types, Total/1000)
+yLabel <- expression("PM"[2.5]*" emission in tons")
+p1 <- ggplot(baltimore.types, aes(x = year, y = Total, fill=type, labesl = round(baltimore.types$Total,2))) + 
+  geom_bar(stat = "identity") + 
+  facet_grid(. ~ type) +
+  ylab(yLabel) + 
+  ggtitle(expression("Total PM"[2.5]*" emissions in Baltimore, 199902998"))
+p2 <- ggplot(baltimore.types, aes(year, Total)) + 
   geom_line(aes(col = type)) +
-  ggtitle("Mean Emissions, per type 1999-2008")
-
-p2 <- ggplot(baltimore.types, aes(year, log10(Median))) +
-  geom_line(aes(col = type)) +
-  ggtitle("Median Emissions, per type 1999-2008")
-plot.new()
+  ylab(yLabel)
 grid.newpage()
-grid.arrange(p1, p2, ncol = 1, nrow = 2)
+grid.arrange(p1,p2)
 dev.off()

@@ -16,8 +16,21 @@ SCC <- readRDS("Source_Classification_Code.rds")
 NEI <- readRDS("summarySCC_PM25.rds")
 NEI.SCC <- merge.data.frame(NEI, SCC, by = "SCC")
 NEI.SCC$Highway <- with(NEI.SCC, grepl("[Hh]ighway", Short.Name, perl = T))
-baltimore.highway <- NEI.SCC %>% filter(Highway == TRUE) %>% group_by(year) %>% summarise(Emissions = median(Emissions))
+baltimore <- NEI.SCC %>% filter(fips == "24510") 
+baltimore.highway <- subset(baltimore, Highway == TRUE)  %>% summarise(Total = sum(Emissions), Emissions = median(Emissions))
+baltimore <- baltimore %>% group_by(year, Highway) %>% summarise(Total = sum(Emissions), Emissions = median(Emissions))
 
 png(filename = "plot5.png", width = 1000, height = 800)
-plot(x=baltimore.highway$year, y = baltimore.highway$Emissions, xlab = "Year", ylab = "Emission Value", main = "Motor Vehicle Emissions, Baltimore 1999-2008", type = "l", lwd = 2, col = "blue")
+par(mfrow = c(2,1)); plot.new();
+yLabel <- expression("Total PM"[2.5]*" emission in tons")
+
+p1 <- ggplot(baltimore.highway, aes(x = year, y = Total, fill = year)) + 
+  geom_bar(stat = "identity") + 
+  ylab(yLabel) + 
+  ggtitle(expression("Total PM"[2.5]*" emission in kilotons, Baltimore 1999-2008")) 
+p2 <- ggplot(baltimore, aes(x=year, y=Total/1000)) + 
+  geom_line(aes(col = Highway)) +
+  ylab(yLabel)
+grid.newpage()
+grid.arrange(p1, p2)
 dev.off()
