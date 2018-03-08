@@ -8,6 +8,8 @@ myplclust <- function( hclust, lab=hclust$labels, lab.col=rep(1,length(hclust$la
   ##    hang:     as in hclust & plclust
   ## Side effect:
   ##    A display of hierarchical cluster with coloured leaf labels.
+  # reset plot window
+  par(mfrow = c(1,1))
   y <- rep(hclust$height,2)
   x <- as.numeric(hclust$merge)
   y <- y[which(x<0)]

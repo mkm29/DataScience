@@ -17,8 +17,8 @@ NEI <- readRDS("summarySCC_PM25.rds")
 NEI.SCC <- merge.data.frame(NEI, SCC, by = "SCC")
 NEI.SCC$Highway <- with(NEI.SCC, grepl("[Hh]ighway", Short.Name, perl = T))
 baltimore <- NEI.SCC %>% filter(fips == "24510") 
-baltimore.highway <- subset(baltimore, Highway == TRUE)  %>% summarise(Total = sum(Emissions), Emissions = median(Emissions))
-baltimore <- baltimore %>% group_by(year, Highway) %>% summarise(Total = sum(Emissions), Emissions = median(Emissions))
+baltimore.highway <- subset(baltimore, Highway == TRUE)  %>% summarise(Total = sum(Emissions))
+baltimore <- baltimore %>% group_by(year, Highway) %>% summarise(Total = sum(Emissions))
 
 png(filename = "plot5.png", width = 1000, height = 800)
 par(mfrow = c(2,1)); plot.new();

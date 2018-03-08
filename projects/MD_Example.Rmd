@@ -1,0 +1,39 @@
+---
+title: "MD Example"
+author: "Mitch Murphy"
+date: "03/08/18"
+output: html_document
+---
+
+
+# Airquality Markdown
+
+## Prep
+
+Let us load some data. 
+```{r}
+library(datasets)
+data("airquality")
+summary(airquality)
+```
+
+## Plots
+```{r Plots}
+pairs(airquality)
+```
+
+### Models
+Here is a few linear models on wind, solar radiation and temperature.
+
+```{r Models, echo = FALSE}
+ozone.temp <- lm(Ozone ~ Temp, data = airquality)
+summary(ozone.temp)
+model <- lm(Ozone ~ Wind + Temp + Solar.R, data = airquality)
+summary(model)
+```
+
+```{r showtable, results="asis"}
+#library(xtable)
+xt <- xtable::xtable(summary(model))
+print(xt, type = "html")
+```

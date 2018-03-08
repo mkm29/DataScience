@@ -18,36 +18,23 @@ NEI.SCC <- merge.data.frame(NEI, SCC, by = "SCC")
 # should I use Short.Name of EI.Sector? Checked, both appear to be equivalent
 NEI.SCC$Coal <- with(NEI.SCC, grepl("[Cc]oal", Short.Name, perl = T))
 #NEI.SCC$Coal2 <- with(NEI.SCC, grepl("[Cc]oal", EI.Sector, perl = T))
-yearly <- NEI.SCC %>% group_by(year, Coal) %>% summarise(Total = sum(Emissions), Mean = mean(Emissions), Median = median(Emissions))
+yearly <- NEI.SCC %>% group_by(year, Coal) %>% summarise(Total = sum(Emissions))
 yearly.coal <- subset(yearly, Coal == TRUE)
-#yearly.coal2 <- NEI.SCC %>% filter(Coal2 == TRUE) %>% group_by(year) %>% summarise(Total = sum(Emissions), Mean = mean(Emissions), Median = median(Emissions))
-YlOrBr <- c("#FFFFD4", "#FED98E", "#FE9929", "#D95F0E", "#993404")
-filled.contour(volcano,
-               color.palette = colorRampPalette(YlOrBr, space = "Lab"),
-               asp = 1)
-filled.contour(volcano,
-               color.palette = colorRampPalette(YlOrBr, space = "Lab",
-                                                bias = 0.5),
-               asp = 1)
-
-## 'jet.colors' is "as in Matlab"
-## (and hurting the eyes by over-saturation)
-jet.colors <-
-  colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan",
-                     "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
 setwd("../")
 png(filename = "plot4.png", width = 1000, height = 800)
-yearly.coal$Total <- with()
 yLabel <- expression("Total PM"[2.5]*" emission in kilotons")
 
 par(mfrow = c(2,1)); plot.new();
 
-p1 <- ggplot(yearly.coal, aes(x = year, y = Total/1000, label = round(yearly.coal$Total,2)/1000), fill = jet.colors(4)) + 
+p1 <- ggplot(yearly.coal, aes(x = year, y = Total/1000, label = round(yearly.coal$Total/1000,2),
+                              fill = year)) + 
   geom_bar(stat = "identity") + 
   ylab(yLabel) + 
   ggtitle(expression("Total PM"[2.5]*" emission in kilotons, United States 1999-2008"))
+r <- range(yearly$Total/1000)
 p2 <- ggplot(yearly, aes(x=year, y=Total/1000)) + 
   geom_line(aes(col = Coal)) +
+  ylim(r[1]-50, r[2]+50) +
   ylab(yLabel)
 plot.new()
 grid.newpage()
