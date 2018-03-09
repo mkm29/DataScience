@@ -10,7 +10,25 @@ output:
 ## Loading and preprocessing the data
 
 ```r
-library(knitr)
+suppressWarnings(library(knitr, warn.conflicts = F))
+suppressWarnings(library(dplyr, warn.conflicts = F))
+suppressWarnings(library(ggplot2, warn.conflicts = F))
+suppressWarnings(library(Hmisc, warn.conflicts = F))
+```
+
+```
+## Loading required package: lattice
+```
+
+```
+## Loading required package: survival
+```
+
+```
+## Loading required package: Formula
+```
+
+```r
 setwd("~/Desktop/DataScience/coursera/projects/ReproducibleResearch/Project1/")
 
 if(!file.exists("activity.csv")) {
@@ -19,13 +37,6 @@ if(!file.exists("activity.csv")) {
   unzip("activity.zip")
   file.remove("activity.zip")
 }
-```
-
-```
-## [1] TRUE
-```
-
-```r
 activityData <- read.csv("activity.csv")
 # need to convert the date column into an R date, so we can extract the day of week from it.
 activityData$date <- with(activityData, as.POSIXct(date))
@@ -39,42 +50,7 @@ activityData$timestamp <- with(activityData, date+interval)
 Did the question imply day of the week (Mon. - Fri.) or just daily? Here is both. 
 
 ```r
-library(dplyr)
-```
-
-```
-## Warning: package 'dplyr' was built under R version 3.2.5
-```
-
-```
-## 
-## Attaching package: 'dplyr'
-```
-
-```
-## The following objects are masked from 'package:stats':
-## 
-##     filter, lag
-```
-
-```
-## The following objects are masked from 'package:base':
-## 
-##     intersect, setdiff, setequal, union
-```
-
-```r
-library(ggplot2)
-```
-
-```
-## Warning: package 'ggplot2' was built under R version 3.2.5
-```
-
-```r
-statsByWeekday <- activityData %>% group_by(day) %>% summarise(TotalSteps = sum(steps, na.rm = T), 
-                                                               MeanSteps = mean(steps, na.rm = T), 
-                                                               MedianSteps = median(steps, na.rm = T))
+statsByWeekday <- activityData %>% group_by(day) %>% summarise(TotalSteps = sum(steps, na.rm = T),                                                              MedianSteps = median(steps, na.rm = T))
 ```
 
 ```
@@ -86,16 +62,16 @@ print(statsByWeekday)
 ```
 
 ```
-## # A tibble: 7 x 4
-##   day       TotalSteps MeanSteps MedianSteps
-##   <chr>          <int>     <dbl>       <dbl>
-## 1 Friday         86518      42.9           0
-## 2 Monday         69824      34.6           0
-## 3 Saturday       87748      43.5           0
-## 4 Sunday         85944      42.6           0
-## 5 Thursday       65702      28.5           0
-## 6 Tuesday        80546      31.1           0
-## 7 Wednesday      94326      40.9           0
+## # A tibble: 7 x 3
+##   day       TotalSteps MedianSteps
+##   <chr>          <int>       <dbl>
+## 1 Friday         86518           0
+## 2 Monday         69824           0
+## 3 Saturday       87748           0
+## 4 Sunday         85944           0
+## 5 Thursday       65702           0
+## 6 Tuesday        80546           0
+## 7 Wednesday      94326           0
 ```
 
 ```r
@@ -146,7 +122,6 @@ print(head(daily))
 ## What is the average daily activity pattern?
 
 ```r
-library(ggplot2)
 intervals <- activityData %>% group_by(interval) %>% summarise(Max = max(steps, na.rm = T))
 plot(intervals, xlab = "Interval", ylab = "Steps", main = "Average Steps Per Time Interval")
 ```
@@ -183,55 +158,6 @@ So there are 2304 missing observations.
 
 
 ```r
-library(Hmisc)
-```
-
-```
-## Warning: package 'Hmisc' was built under R version 3.2.5
-```
-
-```
-## Loading required package: lattice
-```
-
-```
-## Warning: package 'lattice' was built under R version 3.2.5
-```
-
-```
-## Loading required package: survival
-```
-
-```
-## Warning: package 'survival' was built under R version 3.2.5
-```
-
-```
-## Loading required package: Formula
-```
-
-```
-## Warning: package 'Formula' was built under R version 3.2.5
-```
-
-```
-## 
-## Attaching package: 'Hmisc'
-```
-
-```
-## The following objects are masked from 'package:dplyr':
-## 
-##     src, summarize
-```
-
-```
-## The following objects are masked from 'package:base':
-## 
-##     format.pval, units
-```
-
-```r
 activityDataImputed <- activityData
 activityDataImputed$steps <- impute(activityData$steps)
 dailyImputed <- activityDataImputed %>% group_by(date) %>% summarise(steps = sum(steps, na.rm = T))
@@ -247,7 +173,8 @@ ggplot(dailyImputed, aes(x = steps)) +
 
 ```r
 daily$Weekend <- as.factor(ifelse(weekdays(daily$date) %in% c("Saturday", "Sunday"), TRUE, FALSE))
-ggplot(daily, aes(date, TotalSteps, color=Weekend)) + geom_line()+facet_wrap(~Weekend)+labs(title = "Total Steps: Weekend vs. Weekday", x = "Interval", y = "No. of Steps")
+p <- ggplot(daily, aes(date, TotalSteps, color=Weekend)) + geom_line() + facet_wrap(~Weekend) 
+print(p + labs(title = "Total Steps: Weekend vs. Weekday", x = "Interval", y = "No. of Steps"))
 ```
 
 ![](PA1_files/figure-html/unnamed-chunk-5-1.png)<!-- -->

@@ -9,7 +9,10 @@ output:
 
 ## Loading and preprocessing the data
 ```{r LoadData}
-library(knitr)
+suppressWarnings(library(knitr, warn.conflicts = F))
+suppressWarnings(library(dplyr, warn.conflicts = F))
+suppressWarnings(library(ggplot2, warn.conflicts = F))
+suppressWarnings(library(Hmisc, warn.conflicts = F))
 setwd("~/Desktop/DataScience/coursera/projects/ReproducibleResearch/Project1/")
 
 if(!file.exists("activity.csv")) {
@@ -30,12 +33,8 @@ activityData$timestamp <- with(activityData, date+interval)
 
 Did the question imply day of the week (Mon. - Fri.) or just daily? Here is both. 
 ```{r}
-library(dplyr)
-library(ggplot2)
-statsByWeekday <- activityData %>% group_by(day) %>% summarise(TotalSteps = sum(steps, na.rm = T), 
-                                                               MeanSteps = mean(steps, na.rm = T), 
-                                                               MedianSteps = median(steps, na.rm = T))
 
+statsByWeekday <- activityData %>% group_by(day) %>% summarise(TotalSteps = sum(steps, na.rm = T),                                                              MedianSteps = median(steps, na.rm = T))
 print(statsByWeekday)
 ggplot(statsByWeekday, aes(day, TotalSteps, fill = day)) + geom_bar(stat = "identity", show.legend = F) +
   facet_grid(.~day) + xlab("Day") + ylab("Steps") + theme(axis.title.x=element_blank(),
@@ -53,13 +52,10 @@ ggplot(daily, aes(x = TotalSteps)) +
 
 print("Daily")
 print(head(daily))
-
-
 ```
 
 ## What is the average daily activity pattern?
 ```{r}
-library(ggplot2)
 intervals <- activityData %>% group_by(interval) %>% summarise(Max = max(steps, na.rm = T))
 plot(intervals, xlab = "Interval", ylab = "Steps", main = "Average Steps Per Time Interval")
 ```
@@ -83,7 +79,6 @@ length(which(is.na(activityData$steps)))
 So there are 2304 missing observations. 
 
 ```{r impute}
-library(Hmisc)
 activityDataImputed <- activityData
 activityDataImputed$steps <- impute(activityData$steps)
 dailyImputed <- activityDataImputed %>% group_by(date) %>% summarise(steps = sum(steps, na.rm = T))
@@ -96,7 +91,8 @@ ggplot(dailyImputed, aes(x = steps)) +
 ## Are there differences in activity patterns between weekdays and weekends?
 ```{r}
 daily$Weekend <- as.factor(ifelse(weekdays(daily$date) %in% c("Saturday", "Sunday"), TRUE, FALSE))
-ggplot(daily, aes(date, TotalSteps, color=Weekend)) + geom_line()+facet_wrap(~Weekend)+labs(title = "Total Steps: Weekend vs. Weekday", x = "Interval", y = "No. of Steps")
+p <- ggplot(daily, aes(date, TotalSteps, color=Weekend)) + geom_line() + facet_wrap(~Weekend) 
+print(p + labs(title = "Total Steps: Weekend vs. Weekday", x = "Interval", y = "No. of Steps"))
 ```
 
 As would be expected, this particular person was not nearly as active during the weekends than during the week.
