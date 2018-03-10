@@ -1,0 +1,94 @@
+---
+title: "Air Quality Analysis"
+author: "Mitch Murphy"
+date: "3/10/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set()
+library(dplyr)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(reshape2)
+library(RColorBrewer)
+
+setwd("~/Desktop/DataScience/coursera/projects/ExData/project2/")
+
+# make sure the data files are there. If not download them
+if(!dir.exists("NEI")) {
+  # does zip file already exist?
+  if(!file.exists("NEI.zip")) {
+    download.file("https://d396qusza40orc.cloudfront.net/exdata%2Fdata%2FNEI_data.zip", destfile = "NEI.zip")
+  }
+  
+  unzip("NEI.zip", exdir = "NEI")
+  file.remove("NEI.zip")
+}
+
+
+
+```
+
+## Load Data
+
+
+```{r loadData}
+SCC <- readRDS("NEI/Source_Classification_Code.rds")
+SCC$Motor <- with(SCC, Data.Category == "Onroad")
+SCC$Coal <- with(SCC, grepl("[Cc]oal", Short.Name, perl = T))
+NEI <- readRDS("NEI/summarySCC_PM25.rds")
+NEI.SCC <- merge.data.frame(NEI, SCC, by = "SCC")
+```
+
+Now that we have read in the data, let's subset some of it for this analysis. 
+
+```{r subsetData}
+yearly <- NEI.SCC %>% group_by(year) %>% summarise(Total = sum(Emissions))
+baltimore <- subset(NEI.SCC, fips == "24510")
+la <- subset(NEI.SCC, fips == "06037")
+
+baltimore.yearly <- baltimore %>% group_by(year) %>% summarise(Total = sum(Emissions))
+la.yearly <- la %>% group_by(year) %>% summarise(Total = sum(Emissions))
+
+```
+
+## Plots
+
+Here we can see (roughly) how total PM2.5 emissions have changed over the years, throughout the entire United States.
+
+```{r plot1, echo=FALSE}
+r <- c(0, 800+range(yearly$Total)[2]/1000)
+par(mfrow = c(1,1)); plot.new();
+p1 <- barplot(height = yearly$Total/1000, names.arg = yearly$year, 
+              ylab = "Total PM2.5 Emissions in kilotons", 
+              main = "PM2.5 Emissions, United States 1999-2008", 
+              col = brewer.pal(4,"PRGn"), xlab = "Year", ylim = r)
+text(x = p1, y = round(yearly$Total/1000,0), 
+     labels = round(yearly$Total/1000,0), pos = 3)
+```
+
+
+We can constrain this to only the cities of Balitmore and Los Angeles. 
+
+```{r plot2, echo=FALSE}
+p1 <- ggplot(baltimore.yearly, aes(year, Total, fill=year)) + geom_bar(stat="identity") +
+  geom_text(aes(label=Total), vjust=0) +
+  scale_x_continuous(labels = baltimore.yearly$year, breaks = baltimore.yearly$year) +
+  guides(fill = FALSE) +
+  ggtitle(expression("Total PM"[2.5]*" emissions in Baltimore, 1999-2008"))
+
+p2 <- ggplot(la.yearly, aes(year, Total, fill=year)) + geom_bar(stat="identity") +
+  geom_text(aes(label=Total), vjust=0) +
+  scale_x_continuous(labels = la.yearly$year, breaks = la.yearly$year) +
+  guides(fill = FALSE) +
+  ggtitle(expression("Total PM"[2.5]*" emissions in Los Angeles, 1999-2008"))
+
+
+grid.newpage()
+grid.arrange(p1,p2)
+
+```
