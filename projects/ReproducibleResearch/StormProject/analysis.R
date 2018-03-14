@@ -52,5 +52,5 @@ statsByDamage <- stormData %>% group_by(EVTYPENUM) %>% arrange(desc(TOTALDMG)) %
 statsByDamage <- cbind(statsByDamage, Event = events[statsByDamage$EVTYPENUM]) #%>% select(Event, PropDmg, DropDmg)
 eventsByDamage <- data.frame(Event = statsByDamage$Event, TotalDamage = statsByDamage$Total)
 # sort by TotalDamage (decreasing)
-eventsByDamage <- eventsByDamage[order(eventsByDamage$TotalDamage, decreasing = T),]
+eventsByDamage <- eventsByDamage[order(eventsByDamage$TotalDamage, decreasing = TRUE),]
 head(eventsByDamage, n = 10)

@@ -1,0 +1,64 @@
+---
+title: "Storm Analysis (Reproducible Research Propject 2)"
+author: "Mitch Murphy"
+date: "3/14/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(cache=TRUE)
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(Hmisc)
+
+setwd("~/Developer/DataScience/projects/ReproducibleResearch/StormProject/")
+
+if(!file.exists("StormData.csv.bz2")) {
+  download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2")
+}
+```
+
+## Data
+
+This project involves exploring the U.S. National Oceanic and Atmospheric Administration's (NOAA) storm database. 
+This database tracks characteristics of major storms and weather events in the United States, including when and where 
+they occur, as well as estimates of any fatalities, injuries, and property damage.
+
+```{r data}
+stormData <- as.data.table(read.csv("StormData.csv.bz2"))
+stormData$EVTYPE <- with(stormData, as.factor(EVTYPE))
+events <- unique(stormData$EVTYPE)
+stormData$EVTYPENUM <- match(stormData$EVTYPE, events)
+stormData$POP.HEALTH <- stormData$FATALITIES + stormData$INJURIES
+stormData$TOTALDMG <- stormData$PROPDMG + stormData$CROPDMG
+```
+
+### Health
+Across the United States, which types of events are most harmful with respect to population health? From the data 
+provided by the NOAA, we combined fatalities and injuries in order to look at overall population health.
+```{r health, warning=FALSE}
+statsByEvent <- stormData %>% group_by(EVTYPENUM) %>% arrange(desc(POP.HEALTH))
+statsByEvent <- statsByEvent %>% summarise(Total = sum(POP.HEALTH), Fatalities = sum(FATALITIES), Injuries = sum(INJURIES))
+
+statsByEvent <- cbind(statsByEvent, Event = events[statsByEvent$EVTYPENUM])
+head(statsByEvent[order(statsByEvent$Total, decreasing = T),c("Event", "Total")], n=10)
+```
+
+According to the numbers, tornadoes are much more dangerous than any other single event 
+(over 11 times more deadly than the next most dangerous event: excessive heat). 
+
+### Damage
+Across the United States, which types of events have the greatest economic consequences? From the data 
+provided by the NOAA, we combined property damage with crop damage in order to look at economic consequences from storms.
+
+```{r damage, warning=FALSE}
+statsByDamage <- stormData %>% group_by(EVTYPENUM) %>% arrange(desc(TOTALDMG))
+statsByDamage <- statsByDamage %>% summarise(Total = sum(TOTALDMG), PropDmg = sum(PROPDMG), CropDmg = sum(CROPDMG))
+statsByDamage <- cbind(statsByDamage, Event = events[statsByDamage$EVTYPENUM])
+head(statsByDamage[order(statsByDamage$Total, decreasing = T),c("Event", "Total")], n = 10)
+```
+
+Once again we see that tornadoes are the most disruptive storms across the United States. In terms of economic impact, 
+they have twice the impact than the next most dispuptive storm (flashh floods).
