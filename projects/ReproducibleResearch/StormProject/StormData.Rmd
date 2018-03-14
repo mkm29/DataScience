@@ -23,34 +23,76 @@ if(!file.exists("StormData.csv.bz2")) {
 }
 ```
 
-## Data
+## Synopsis
+From this rather basic analysis of storm data across the United States (from 1950 through 2018), it appears that the 
+frequency of all storms (particularly those with the most health and economic consequences) has increased since 1950. 
+If you remove tornadoes and thunderstorm events from the data, the impace on population health looks to be decreasing
+over time. Bottomline is that tornadoes are extremely disruptive! We should also consider combining certain events into
+a single category (wind). 
+
+## Data Processing
 
 This project involves exploring the U.S. National Oceanic and Atmospheric Administration's (NOAA) storm database. 
 This database tracks characteristics of major storms and weather events in the United States, including when and where 
-they occur, as well as estimates of any fatalities, injuries, and property damage.
+they occur, as well as estimates of any fatalities, injuries, and property damage. We made a few transformations to the 
+original data, namely converting the EVTYPE into factors and adding new columns for total health and damages. Furthermore,
+we added an event number (between 1 and 985) to each observation (so that we can aggregate by unique events). 
+
+
 
 ```{r data}
 stormData <- as.data.table(read.csv("StormData.csv.bz2"))
 stormData$EVTYPE <- with(stormData, as.factor(EVTYPE))
 events <- unique(stormData$EVTYPE)
 stormData$EVTYPENUM <- match(stormData$EVTYPE, events)
-stormData$POP.HEALTH <- stormData$FATALITIES + stormData$INJURIES
+stormData$POPHEALTH <- stormData$FATALITIES + stormData$INJURIES
 stormData$TOTALDMG <- stormData$PROPDMG + stormData$CROPDMG
+stormData$DATE <- as.POSIXct(stormData$BGN_DATE, format = "%m/%d/%Y %H:%M:%S")
+stormData$YEAR <- format(stormData$DATE, "%Y")
+stormData$MONTH <- format(stormData$DATE, "%m")
 ```
 
 ### Health
 Across the United States, which types of events are most harmful with respect to population health? From the data 
 provided by the NOAA, we combined fatalities and injuries in order to look at overall population health.
 ```{r health, warning=FALSE}
-statsByEvent <- stormData %>% group_by(EVTYPENUM) %>% arrange(desc(POP.HEALTH))
-statsByEvent <- statsByEvent %>% summarise(Total = sum(POP.HEALTH), Fatalities = sum(FATALITIES), Injuries = sum(INJURIES))
+statsByEvent <- stormData %>% group_by(EVTYPENUM) %>% arrange(desc(POPHEALTH))
+statsByEvent <- statsByEvent %>% summarise(Total = sum(POPHEALTH), Fatalities = sum(FATALITIES), Injuries = sum(INJURIES), n = n())
+statsByEvent <- cbind(statsByEvent, Event = events[statsByEvent$EVTYPENUM], EVTYPENUM = statsByEvent$EVTYPENUM)
+head(statsByEvent[order(statsByEvent$Total, decreasing = T),c("Event", "Total")], n = 10)
 
-statsByEvent <- cbind(statsByEvent, Event = events[statsByEvent$EVTYPENUM])
-head(statsByEvent[order(statsByEvent$Total, decreasing = T),c("Event", "Total")], n=10)
+topEventNums <- head(statsByEvent$EVTYPENUM, n=10)
+eventsYearly <- subset(stormData, EVTYPENUM %in% topEventNums) %>% group_by(EVTYPENUM, YEAR) %>% arrange(desc(POPHEALTH)) %>% summarise(TOTAL = sum(POPHEALTH), n = n())
+eventsYearly$EVENT <- events[eventsYearly$EVTYPENUM]
+eventsYearly$YEAR <- as.numeric(eventsYearly$YEAR)
+
+ggplot(eventsYearly, aes(x = YEAR, y = n, colour = EVENT)) + geom_line(aes(group = EVENT)) +
+  xlab("Year") + ylab("Frequency") + ggtitle("Frequency of storms: 1950-2018")
+
+ggplot(subset(eventsYearly, YEAR >=1988), aes(x = YEAR, y = TOTAL, colour = EVENT)) + geom_line(aes(group = EVENT)) +
+  xlab("Year") + ylab("Injuries + Fatalities") + ggtitle("Population Health vs. Year")
 ```
 
 According to the numbers, tornadoes are much more dangerous than any other single event 
-(over 11 times more deadly than the next most dangerous event: excessive heat). 
+(over 11 times more dangerous than the next most dangerous event: excessive heat). Keep in mind that this is when we
+consider the sum of fatalities and injuries; let's look at only fatalities and only injuries. Moreover, the frequency of
+tornadoes has drastically increased since 1950, followed by TSTM WIND and THUNDERSTORM WINDS, which appear to be similar
+(possible consider grouping the two). 
+
+```{r fatalities}
+# Only focus on fatalities
+head(statsByEvent[order(statsByEvent$Fatalities, decreasing = T),c("Event", "Fatalities", "Injuries")], n = 10)
+# Only focus on injuries
+head(statsByEvent[order(statsByEvent$Injuries, decreasing = T),c("Event", "Injuries", "Fatalities")], n = 10)
+```
+Therefore when we focus on only fatalities or injuries, we see some differences in the top 10 storms with repsect to 
+population health. Tornadoes, on the other hand, are the top contributor to both fatalities and injuries, and out of the
+top 10 events, 7 rank in the top 10 in both fatalities and injuries:
+```{r}
+storms1 <- head(statsByEvent[order(statsByEvent$Fatalities, decreasing = T),c("Event", "Fatalities")], n = 10)$Event
+storms2 <- head(statsByEvent[order(statsByEvent$Injuries, decreasing = T),c("Event", "Injuries")], n = 10)$Event
+intersect(storms1, storms2)
+```
 
 ### Damage
 Across the United States, which types of events have the greatest economic consequences? From the data 
@@ -61,7 +103,30 @@ statsByDamage <- stormData %>% group_by(EVTYPENUM) %>% arrange(desc(TOTALDMG))
 statsByDamage <- statsByDamage %>% summarise(Total = sum(TOTALDMG), PropDmg = sum(PROPDMG), CropDmg = sum(CROPDMG))
 statsByDamage <- cbind(statsByDamage, Event = events[statsByDamage$EVTYPENUM])
 head(statsByDamage[order(statsByDamage$Total, decreasing = T),c("Event", "Total")], n = 10)
+
+topEventNums.damage <- head(statsByDamage$EVTYPENUM, n=10)
+eventsYearly.damage <- subset(stormData, EVTYPENUM %in% topEventNums.damage) %>% group_by(EVTYPENUM, YEAR) %>% arrange(desc(TOTALDMG)) %>% summarise(TOTAL = sum(TOTALDMG), n = n())
+eventsYearly.damage$EVENT <- events[eventsYearly.damage$EVTYPENUM]
+eventsYearly.damage$YEAR <- as.numeric(eventsYearly.damage$YEAR)
+
+ggplot(subset(eventsYearly.damage, YEAR >= 1988), aes(x = YEAR, y = TOTAL, colour = EVENT)) + geom_line(aes(group = EVENT)) +
+  xlab("Year") + ylab("Property + Crop Damage") + ggtitle("Economic Costs From Storms, 1988-2018")
 ```
 
 Once again we see that tornadoes are the most disruptive storms across the United States. In terms of economic impact, 
-they have twice the impact than the next most dispuptive storm (flashh floods).
+they have twice the impact than the next most dispuptive storm (flashh floods). Let's focus on just property damage and
+crop damage:
+
+```{r}
+# Just property damage
+head(statsByDamage[order(statsByDamage$PropDmg, decreasing = T),c("Event", "PropDmg")], n = 10)
+# Just Crop damage
+head(statsByDamage[order(statsByDamage$CropDmg, decreasing = T),c("Event", "CropDmg")], n = 10)
+
+storms1 <- head(statsByDamage[order(statsByDamage$PropDmg, decreasing = T),c("Event", "PropDmg")], n = 10)$Event
+storms2 <- head(statsByDamage[order(statsByDamage$CropDmg, decreasing = T),c("Event", "CropDmg")], n = 10)$Event
+intersect(storms1, storms2)
+```
+Once again, we see that tornadoes rank first in property and crop damage and that 8 out of the top in Total damages rank
+top 10 in both only property damage and only crop damage. As in the previous section, we could create a new "wind"
+category as 4 out of these 8 are wind related (THUNDERSTORM WIND should be combined with THUNDERSTORM WINDS).
