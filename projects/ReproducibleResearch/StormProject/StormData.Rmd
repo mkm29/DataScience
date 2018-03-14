@@ -1,8 +1,11 @@
 ---
-title: "Storm Analysis (Reproducible Research Propject 2)"
+title: "Storm Analysis (Reproducible Research Project 2)"
 author: "Mitch Murphy"
 date: "3/14/2018"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
