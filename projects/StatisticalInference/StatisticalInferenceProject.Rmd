@@ -1,0 +1,37 @@
+---
+title: "StatisticalInference"
+author: "Mitch Murphy"
+date: "4/17/2018"
+output: html_document
+---
+# Statistical Inference Project 
+
+## Introduction 
+1. Simulate the exponential distribution
+  1. Calculate the mean and variability
+  2. Exploratory Data Analysis
+    + Highlight basic features present in the data
+  3. Construct and interpret confidence intervals
+  4. What assumptions must hold?
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(data.table)
+library(ggplot2)
+```
+
+### Simulation
+
+```{r}
+set.seed(round(1000*pi, 0))
+
+lambda <- 0.2
+# We willl be taking the average of 40 exponentials
+n <- 40
+# we will be comparing this distribution to 1000 random uniforms
+numOfSims <- 1000
+simulatedExponentials <- replicate(numOfSims, rexp(n, lambda))
+# now lets compute the mean of these simulations
+means <- apply(simulatedExponentials, 2, mean)
+```
