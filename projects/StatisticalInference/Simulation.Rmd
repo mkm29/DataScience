@@ -1,0 +1,84 @@
+---
+title: "Statistical Inference: Simulation Exercise"
+author: "Mitch Murphy"
+date: "4/17/2018"
+output:
+  pdf_document: default
+---
+## Introduction 
+1. Simulate the exponential distribution
+  1. Calculate the mean and variability
+  2. Exploratory Data Analysis
+    + Highlight basic features present in the data
+  3. Construct and interpret confidence intervals
+  4. What assumptions must hold?
+ 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+```
+
+## Simulation
+Let us first sum up the exponential distribution: $\mu=\frac{1}{\lambda}$ and a variance  $\sigma^2=\lambda^{-2}$. 
+
+```{r}
+set.seed(round(1000*pi, 0))
+
+lambda <- 0.2
+# We willl be taking the average of 40 exponentials
+n <- 40
+# we will be comparing this distribution to 1000 random uniforms
+numOfSims <- 1000
+simulatedExponentials <- replicate(numOfSims, rexp(n, lambda))
+# now lets compute the mean of these simulations
+means <- apply(simulatedExponentials, 2, mean)
+d <- density(means)
+```
+
+## Mean
+Recall that $\mu=\frac{1}{\lambda}$ so theoretically $\mu=5$ and our sample comes close, $\mu=0.5025$ in this case. 
+```{r mean}
+plot(d, main = "Kernel Density of Means", xlab = "Mean")
+polygon(d, col = "red", border = "blue")
+observed_mean <- mean(means)
+legend("topleft", legend = c(paste("Observed Mean:",round(observed_mean,3)), paste("Expected Mean:",lambda^-1)),
+       lty = c(2,3), col = c("yellow", "black"), bty = "n")
+abline(v=lambda^-1, col = "yellow", lwd = 2, lty = 2)
+abline(v=observed_mean, col = "black", lty = 3, lwd = 2)
+```
+
+## Variability 
+In our case we must adjust $\sigma$ for the given sample size ($n=40$) so we have 
+$\sigma^2=(\frac{1}{\lambda}\cdot\frac{1}{\sqrt{n}})^2$. Theoretically $\sigma^2=0.625$, however in this case
+$\sigma^2=0.6624831$
+
+```{r variability}
+# first let's compute the standard deviations
+sample_sd <- sd(means)
+expected_sd <- (1/lambda)/sqrt(n)
+# now let's focus on the variance of the 2
+sample_var <- sample_sd^2
+expected_var <- ((1/lambda)*(1/sqrt(n)))^2
+compareMatrix <- matrix(c(1/lambda,observed_mean,
+                          expected_var, sample_var), nrow = 2)
+rownames(compareMatrix) <- c("Expected","Observed")
+colnames(compareMatrix) <- c("mean", "variance")
+compareMatrix
+```
+
+## Normality
+```{r normality}
+# lets overlay the normal distribution over our observed data (density/histogram)
+xfit <- seq(min(means), max(means), length=100)
+yfit <- dnorm(xfit, mean=1/lambda, sd=(1/lambda/sqrt(n)))
+hist(means,breaks=n,prob=T,col="orange",xlab = "means",main="Density of means",ylab="density")
+lines(xfit, yfit, pch=22, col="black", lty=5)
+
+qqnorm(means)
+qqline(means, col = 2)
+```
+The distribution of the averages of 40 exponentials appears to be nearly identical to that of the normal distribution. 
+
+# Assumptions
+When constructing confidence intervals (as we did above), we assumed that the variance of the 2 groups was different.
