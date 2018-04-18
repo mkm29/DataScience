@@ -15,7 +15,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(data.table)
+library(datasets)
 library(ggplot2)
 ```
 
@@ -79,3 +79,46 @@ qqnorm(means)
 qqline(means, col = 2)
 ```
 The distribution of the averages of 40 exponentials appears to be nearly identical to that of the normal distribution. 
+
+# Tooth Growth
+## Summary of Data
+Now let us take a look at the affect of two different supplements on tooth growth. First, let's get an high-level overview
+of the data:
+```{r toothGrowth}
+tg <- ToothGrowth
+tg$dose <- as.factor(tg$dose)
+str(tg)
+summary(tg)
+
+ggplot(data=tg, aes(x=dose, y=len, fill=supp)) + geom_bar(stat="identity",) + facet_grid(. ~ supp) + 
+  xlab("Dose, mg") + ylab("Tooth length") + guides(fill=guide_legend(title="Supplement"))
+```
+
+## Confidence Intervals
+Now let us construct 95% confidence intervals across the different doses.
+
+```{r}
+ci <- t.test(len ~ supp, data = tg)
+pval <- ci$p.value
+ci
+```
+Since zero is contained in this interval, and because p-val$\geq \alpha=0.05$ we cannot reject the null hypothesis.
+Let's further explore this data by creating dosage-groups, as so:
+```{r}
+tg.dose1 <- subset(tg, dose %in% c(0.5,1.0))
+tg_dose2 <- subset(tg, dose %in% c(0.5,2.0))
+tg_dose3 <- subset(tg, dose %in% c(1.0,2.0))
+
+# construct the CI for dose of 0.5 and 1.0
+t.test(len ~ dose, data = tg.dose1)
+#construct the CI for a dose of 0.5 and 2.0
+t.test(len ~ dose, data = tg_dose2)
+# construct the CI for a dose of 1.0 and 2.0
+t.test(len ~ dose, data = tg_dose3)
+```
+Because zero is not contained in any of the above confidence intervals and the p-value $\leq \alpha$ we can conclude
+that the dose of the supplement effects tooth length; specifically as the dose increases so does the tooth length.
+We have already concluded that the supplement type is not significant (first CI above).
+
+# Assumptions
+When constructing confidence intervals (as we did above), we assumed that the variance of the 2 groups was different. 

@@ -1,6 +1,5 @@
-library(data.table)
+library(datasets)
 library(ggplot2)
-library(xtable)
 
 set.seed(round(1000*pi, 0))
 
@@ -43,3 +42,26 @@ lines(xfit, yfit, pch=22, col="black", lty=5)
 
 qqnorm(means)
 qqline(means, col = 2)
+
+
+tg <- ToothGrowth
+tg$dose <- as.factor(tg$dose)
+str(tg)
+summary(tg)
+
+ggplot(data=tg, aes(x=dose, y=len, fill=supp)) + geom_bar(stat="identity",) + facet_grid(. ~ supp) + 
+  xlab("Dose, mg") + ylab("Tooth length") + guides(fill=guide_legend(title="Supplement"))
+
+ci <- t.test(len ~ supp, data = tg)
+pval <- ci$p.value
+
+tg.dose1 <- subset(tg, dose %in% c(0.5,1.0))
+tg_dose2 <- subset(tg, dose %in% c(0.5,2.0))
+tg_dose3 <- subset(tg, dose %in% c(1.0,2.0))
+
+# construct the CI for dose of 0.5 and 1.0
+t.test(len ~ dose, data = tg.dose1)
+#construct the CI for a dose of 0.5 and 2.0
+t.test(len ~ dose, data = tg_dose2)
+# construct the CI for a dose of 1.0 and 2.0
+t.test(len ~ dose, data = tg_dose3)
