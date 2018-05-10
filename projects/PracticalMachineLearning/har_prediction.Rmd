@@ -1,0 +1,168 @@
+---
+title: "Human Activity Recognition Prediction"
+author: "Mitch Murphy"
+date: "5/10/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE, echo = FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+library(caret); library(ggplot2); library(gbm); library(randomForest); library(gridExtra); library(VIM); library(doMC); library(parallel)
+setwd("~/Desktop/coursera/DataScience/projects/PracticalMachineLearning/")
+registerDoMC(cores=detectCores())
+```
+
+## Abstract
+Data is king, and human activity is no exception. Devices such as Fitbit now provide means to easily collect large 
+amounts of personal activity data. In this case study, the data we utilize comes from accelerometers on the belt, 
+forearm, arm, and dumbell of 6 individuals, and our goal is to accurately predict the activity they were attempting to 
+perform. It always helps to first visualize your data which can lead you to be able to identify the most "important" 
+variables/features. Clustering is another way of carrying out dimensionallity reduction, which is of particular 
+importance when computational power is expensize or the data becomes too large. The prediction model that I came up 
+with has an accuracy of 99.29%, sensitivity of 99.64% and a specificity of 99.93%. 
+
+
+## Methods
+The data used in this study can be found here: http://groupware.les.inf.puc-rio.br/har. For reproducibilty reasons, 
+let's set the seed:
+```{r seed}
+set.seed(1234)
+```
+
+### Data Preparation
+The data is comprised of 160 variables: the activity classe (y) plus 159 predictors. Upon closer inspection, the 
+majority of these predictors are statistical metrics (calculated on the data, at various time intervals), as well as an 
+index (X), the user's name, and some timestamp information. 
+
+```{r dataLoad}
+originalTraining <- read.csv("pml-training.csv")
+testing <- read.csv("pml-testing.csv")
+table(complete.cases(originalTraining))
+```
+As suspected, the majority of variable observations are missing with only about 2% of all variables being complete. As 
+stated above, there are over 100 computed metrics (like standard deviation), so let's remove these. 
+
+```{r dataPrep}
+varsToIgnore <- "^(X|user_name|raw_timestamp_part_1|raw_timestamp_part_2|cvtd_timestamp|new_window|num_window|kurtosis|skewness|min|max|stddev|total|var|avg|ampl)"
+colsToIgnore <- grep(varsToIgnore, names(originalTraining))
+originalTraining <- originalTraining[,-colsToIgnore]
+testing <- testing[,-colsToIgnore]
+table(complete.cases(originalTraining))
+```
+
+Now every observation is complete! The timestamp variables are used to determine when to compute metrics on the data, 
+and while we ignore these metrics it would be nice to have an elapsed time variable. Now we will split the training data 
+into train and validation sets (80/20 split):
+
+```{r splitData}
+inTrain <- createDataPartition(y=originalTraining$classe, p=0.8, list=F)
+# training on training set :)
+training <- originalTraining[inTrain,]; validation <- originalTraining[-inTrain,]
+```
+ 
+We are now ready to build our model. The model is built using the random forest classification algorithm, and we 
+manually specify the tuning parameters to use 3-fold cross-validation as well as parallelization (which will 
+dramatically speed up the training phase). 
+
+```{r buildModel, cache=TRUE}
+myTrainControl <- trainControl(method="cv", number=3, verboseIter=T, allowParallel = T)
+modFit <- train(classe ~ ., data=training, method="rf", trControl=myTrainControl)
+print(modFit$finalModel)
+```
+
+In this example, we used the default of 500 trees, but we can optimize this by plotting the accuracy vs. # of 
+predictors (as shown below). This plot tells us that the maximum accuracy occurs at just around 24 trees. Now that we 
+have constructed the model, we can make predictions on the test set (in this case the validation set).
+
+
+## Results
+```{r predictions}
+prediction <- predict(modFit, newdata=validation)
+confusionMatrix(validation$classe, prediction)
+```
+Using this model, we obtain an accuracy of 99.23%, sensitivity of 99.326% and specitivity of 99.848%  
+(across all classes). These are all excelllent values!
+
+## Conclusion
+We can develop a highly accurate model to predict activity class based on sensor data, using the random forest 
+algorithm. Using this model, we made predictions on the 20 test observations:
+
+```{r conclusion}
+test.pred <- predict(modFit, newdata = testing)
+print(test.pred)
+```
+
+Our model was 100% accurate in predicting the test set!
+
+
+## Further Discussion
+We can leverage PCA as well as clustering for dimensionallity reduction. First let us compute the importance of each of 
+the predictors. The roll_belt variable is by far the most "important." Using this information in addition to some 
+PCA we can get a better idea of which variables we should try and cluster.
+```{r varImportance}
+var.importance <- varImp(modFit$finalModel)
+var.importance$name <- rownames(var.importance)
+var.importance <- var.importance[order(var.importance$Overall, decreasing = T),]
+rownames(var.importance) <- NULL
+print(var.importance)
+qplot(data=training,x=roll_belt,y=pitch_forearm,col=training$classe)
+```
+
+
+### PCA
+
+```{r plotPCA}
+plotPCAForVariable <- function(var, varname) {
+  qplot(data=training_pc12,x=x,y=y,col=training[,c(as.numeric(var))]) + labs(colour = varname)
+}
+training.scaled <- scale(training[,-c(49)], center=T,scale=T)
+pc <- prcomp(training.scaled) 
+cumsum((pc$sdev^2 / sum(pc$sdev^2))) # First 2 principle components exlain ~ 47% of the variance 
+training_pc12 <- as.matrix(training.scaled) %*% pc$rotation[,c(1,2)]
+training_pc12 <- data.frame(x=training_pc12[,1],y=training_pc12[,2])
+plotPCAForVariable(49, "Activity Class")
+```
+So about 47% of all variability in the data can be explained by the first 2 principal components. We color these points 
+based on their activity class. We furthered this mini analysis by coloring the data on a few other variables - those 
+being the top 3 in importance (that we computed earlier). 
+```{r roll_belt}
+plotPCAForVariable(1,"roll_belt")
+```
+According to this, roll_belt looks to be a promising variable to "collapse" into a factor variable with just 2 levels.
+
+```{r pitch_forearm}
+plotPCAForVariable(38, "pitch_forearm")
+```
+pitch_forearm does not look to be a good candidate (without any transformations). 
+
+```{r yaw_belt}
+plotPCAForVariable(3,"yaw_belt")
+```
+
+At first glance, yaw_belt can be split by the sign of the first 2 components.
+
+### Clustering
+Clustering is also a very good way to reduce the features of a data set. Here we simply create one cluster, replace n 
+features with the cluster number and observe how it affects the performance of our model. 
+```{r clustering, cache=TRUE}
+cm <- cor(training[,-c(49)])
+# from the correlation matrix lets identify variables to cluster on
+# 1 and 3,7:9 (roll_belt, accel_belt_x, accel_belt_y, accel_belt_z)
+colsToCombine <- c(1,3,8,9,17)
+dist1 <- dist(training[,colsToCombine])
+clust1 <- hclust(dist1)
+#plot(clust1)
+# so from the dendrogram, it looks like we might be able to reduce 5 variables into 1 (cluster), 
+# where a good cut might be at k=180 (so the new variable is between 1 and 180)
+kmeans1 <- kmeans(training[,colsToCombine], centers = 180)
+training$new_belt <- kmeans1$cluster
+# now add this to our vallidation and test sets
+kmeans.val <- kmeans(validation[,colsToCombine], centers = 180)
+validation$new_belt <- kmeans.val$cluster
+modFit2 <- train(classe ~., data = training[,-colsToCombine], method="rf", trControl=myTrainControl)
+prediction2 <- predict(modFit2, newdata=validation)
+confusionMatrix(validation$classe, prediction2)
+```
+This very simple clustering technique reduced the number of variables from 5 down to 1, with an accuracy of 98.24%, 
+a sensitivity of 98.18% and a specitivity of 99.54%. This strategy should be further employed on sets of other highly 
+correlated variables. 
