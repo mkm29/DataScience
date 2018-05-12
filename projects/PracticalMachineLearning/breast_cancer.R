@@ -1,3 +1,8 @@
+## Wisconsin breast cancer study (1995 I believe)
+## https://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin
+## https://rpubs.com/raviolli77/352956
+
+
 library(RCurl); library(caret); library(ggplot2); library(gbm); library(randomForest)
 library(gridExtra); library(VIM); library(parallel); library(doParallel)
 
@@ -32,3 +37,23 @@ stopCluster(cl)
 
 prediction <- predict(modFit, newdata=testing)
 confusionMatrix(testing$diagnosis, prediction)
+
+
+var.importance <- varImp(modFit$finalModel)
+var.importance$name <- rownames(var.importance)
+var.importance <- var.importance[order(var.importance$Overall, decreasing = T),]
+rownames(var.importance) <- NULL
+print(var.importance)
+qplot(data=training,x=perimeter_worst,y=area_worst,col=training$diagnosis)
+
+plotPCAForVariable <- function(var, varname) {
+  qplot(data=training_pc12,x=x,y=y,col=training[,c(as.numeric(var))]) + labs(colour = varname)
+}
+
+training.scaled <- scale(training[,-c(1)], center=T,scale=T)
+pc <- prcomp(training.scaled) 
+cumsum((pc$sdev^2 / sum(pc$sdev^2))) # First 2 principle components exlain ~ 64% of the variance 
+training_pc12 <- as.matrix(training.scaled) %*% pc$rotation[,c(1,2)]
+training_pc12 <- data.frame(x=training_pc12[,1],y=training_pc12[,2])
+
+plotPCAForVariable(1, "Diagnosis")
