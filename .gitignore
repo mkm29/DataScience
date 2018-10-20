@@ -2,3 +2,4 @@ resources/*
 data/*
 *.png
 *.docx
+*.RData
