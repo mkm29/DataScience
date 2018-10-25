@@ -1,0 +1,3 @@
+# Monty Hall Problem
+
+My intuition told me that sticking with your initial choice or switching doors would equate to the same probability of winning the car, however after reading the wiki article I realized that my intuion was wrong and that I should have written it down to validate! I was assuming that the host's choice to open a door was also random, however they are conditioned on choosing a door that does not conceal the prize, and when this conditional probability is considered your probability of winning the car increases from 1/3 to 2/3 when you switch. Lesson: do not assume independence, first you should always check this.
