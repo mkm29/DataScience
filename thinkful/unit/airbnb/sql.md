@@ -1,3 +1,5 @@
+**I chose Denver as the city**
+
 
 # What's the most expensive listing?
   * It is important to take a look at the data first, as sorting by only the price can lead to misleading results: 9 listings share the top price. 
