@@ -1,4 +1,4 @@
-## Does a new supplement help people sleep better?
+# Does a new supplement help people sleep better?
 
 1. **Versions**
     * **A** - control group, given placebo
@@ -13,7 +13,7 @@
     2. Improved quality of sleep: ask all customers to report how long they remained asleep, for 14 days. This could be done in a more clinical setting, where breathing patterns are also measured (just from sound), thus quality of sleep can be reported as the percentage of total time slept spent in deep REM sleep.
     3. This would be the easiest test to conduct (of the 3 mentioned), but you would not necessarily be assessing the supplement's ability to improve sleep, rather the company's ability to market and sell the supplement. However, our data will suffer less bias.
 
-## Will new uniforms help a gym's business?
+# Will new uniforms help a gym's business?
 
 1. The first thing to do in most experimental design is to get a clearer definition of the question at hand. A gym's business could indicate a lot of things: increased membership, increased consistency among members, increased referral rate or even increased concession sales (protein shakes). We will run into sampling/bias errors for the first question, so let's tackle the question of will new uniforms lead to longer times spent at the gym. Furthermore, the question is fairly ambiguous, does the new uniform only have a different color than the original? Or does it also have a new design? We need to try to identify individual factors, rather than multiple factors at once. 
 2. **Versions**
@@ -30,7 +30,7 @@
     * The gym will also know the uniforms worn for a particular time slot. We can then compute key metrics (such as average time spent) for each group.  
 
 
-## Will a new homepage improve my online exotic pet rental business?
+# Will a new homepage improve my online exotic pet rental business?
 
 1. Let's define improve: increase sales. 
 2. Versions:
@@ -44,7 +44,7 @@
     * Again, this is all dependent on the question being asked. In regard to conversion rates (sales), this number is easily measured. Same with clicks and time spent on website. 
 
 
-## If I put 'please read' in the email subject will more people read my emails?
+# If I put 'please read' in the email subject will more people read my emails?
 
 1. This is a rather vague question: how do we measure if a person has read my email? Let's say that the email asks for users to reply or click a link. This information is actually measurable, a person actually reading an email is quite subjective. 
 2. **Versions** 
