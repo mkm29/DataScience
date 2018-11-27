@@ -1,19 +1,19 @@
-# Does a new supplement help people sleep better?
+1. # Does a new supplement help people sleep better?
 
-1. **Versions**
-    * **A** - control group, given placebo
-    * **B** - experiment group, given actual supplement that is supposed to aid in sleeping
-2. **Sample**
-    * You could just randomly assign customers to the two groups; however, this could introduce sampling bias; you will probably need to collect additional information such as gender, age, medical conditions and current prescriptions. 
-3. **Hypothesis**
-    * First, we must address the question: what do you mean by sleep better? This could mean falling asleep quicker or staying asleep longer. As I have been personally been trying to conduct a sleep analysis on my own sleeping patters, recording information on the quality/duration of sleep is difficult, so for this test we will consider the former: does this supplement aid users in falling asleep quicker? This will still require customer to self-report how fast they fell asleep, so the question could be assessed by simply looking at the purchasing rates of both groups (with the marketing ploy of making you fall asleep quicker). 
-4. **Outcome**
-    * We will be measuring a different outcome for the above hypotheses:
-    1. Fall asleep faster: In order to minimize subjectivity, we will simply ask all customers to report how long it took them to fall asleep, each night for 14 days. 
-    2. Improved quality of sleep: ask all customers to report how long they remained asleep, for 14 days. This could be done in a more clinical setting, where breathing patterns are also measured (just from sound), thus quality of sleep can be reported as the percentage of total time slept spent in deep REM sleep.
-    3. This would be the easiest test to conduct (of the 3 mentioned), but you would not necessarily be assessing the supplement's ability to improve sleep, rather the company's ability to market and sell the supplement. However, our data will suffer less bias.
+## Versions
+  1. A (control) - original/existing supplement
+  2. B (experimental) - new formula
+## Sample
+  1. Randomly select a sample from all of your customers, then divide this sample in half and assign one to the control group and the remaining to the experimental group.
+    * Need to ensure that characteristics such as age and gender are similarly represented in each sample 
+## Hypothesis
+  1. The newly formulated supplement results in better sleep.
+## Outcome
+  1. As we want to avoid using self-reported data (like duration of sleep) as our measurable metric (KPI), we will simply use the total sales per a fixed time period (eg. bottles per month)
+## Other
+  1. This KPI might very well suffer seasonality bias, but conducting the experiment at the same time should reduce this effect. 
 
-# Will new uniforms help a gym's business?
+2. # Will new uniforms help a gym's business?
 
 1. The first thing to do in most experimental design is to get a clearer definition of the question at hand. A gym's business could indicate a lot of things: increased membership, increased consistency among members, increased referral rate or even increased concession sales (protein shakes). We will run into sampling/bias errors for the first question, so let's tackle the question of will new uniforms lead to longer times spent at the gym. Furthermore, the question is fairly ambiguous, does the new uniform only have a different color than the original? Or does it also have a new design? We need to try to identify individual factors, rather than multiple factors at once. 
 2. **Versions**
