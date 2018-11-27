@@ -1,4 +1,4 @@
-1. # Does a new supplement help people sleep better?
+# Does a new supplement help people sleep better?
 
 ## Versions
   1. A (control) - original/existing supplement
@@ -13,7 +13,7 @@
 ## Other
   1. This KPI might very well suffer seasonality bias, but conducting the experiment at the same time should reduce this effect. 
 
-2. # Will new uniforms help a gym's business?
+# Will new uniforms help a gym's business?
 
 1. The first thing to do in most experimental design is to get a clearer definition of the question at hand. A gym's business could indicate a lot of things: increased membership, increased consistency among members, increased referral rate or even increased concession sales (protein shakes). We will run into sampling/bias errors for the first question, so let's tackle the question of will new uniforms lead to longer times spent at the gym. Furthermore, the question is fairly ambiguous, does the new uniform only have a different color than the original? Or does it also have a new design? We need to try to identify individual factors, rather than multiple factors at once. 
 2. **Versions**
