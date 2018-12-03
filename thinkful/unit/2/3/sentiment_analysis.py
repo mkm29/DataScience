@@ -4,11 +4,15 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import scipy
 from sklearn.naive_bayes import BernoulliNB
+from sklearn.naive_bayes import MultinomialNB
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import confusion_matrix
+from sklearn.model_selection import train_test_split
 import re
 import nltk
 import yaml
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from nltk.tokenize import word_tokenize # or use some other tokenizer
 
 '''
 Author: Mitchell Murphy
@@ -16,7 +20,25 @@ Date: 1 Dec 2019
 This basic sentiment analysis came from: http://fjavieralba.com/basic-sentiment-analysis-with-python.html
 '''
 
-def number_capitalized_words(review):
+
+'''
+    INPUT: single sentence 
+    OUTPUT: list of values: [negative, neutral, positive, compound]
+'''
+def nltk_sentiment(sentence, return_list = True):
+    nltk_sentiment = SentimentIntensityAnalyzer()
+    score = nltk_sentiment.polarity_scores(sentence)
+    # score will look like:
+    # {'neg': 0.0, 'neu': 0.667, 'pos': 0.333, 'compound': 0.3612}
+    if return_list:
+        # [0.0, 0.667, 0.333, 0.3612]
+        score = [ item[1] for item in score.items() ]
+        return score[0], score[1], score[2], score[3]
+    else:
+        return score
+
+
+def percent_capitalized_words(review, return_number = False):
     # first we need to get each sentence
     pattern = re.compile("[A-Z]{2,}")
     words_to_ignore = ["US", "USA", "PC", "AC", "DC", "MP", "PDA",
@@ -24,6 +46,7 @@ def number_capitalized_words(review):
     found = 0  
 
     sentences = review.split('.')
+    num_words = len(sentences)
     for sentence in sentences:
         words = sentence.split(' ') 
         for word in words:
@@ -31,8 +54,10 @@ def number_capitalized_words(review):
                 continue
             if pattern.match(word):
                 found += 1
-
-    return found
+    if return_number:
+        return found
+    else:
+        return found / num_words
 
 
 class Splitter(object):
