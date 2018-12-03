@@ -21,6 +21,32 @@ This basic sentiment analysis came from: http://fjavieralba.com/basic-sentiment-
 '''
 
 
+def get_score_for_word(reviews, word):
+    q = 'review.str.contains(" {} ")'.format(word)
+    return reviews.query(q).score.mean()
+
+def get_top_words(reviews, num_of_words):
+    # lets determine which "buzzwords" are more frequent 
+    word_counts = reviews.review.str.split(expand=True).stack().value_counts().to_frame()
+    
+    
+    word_counts_positive = reviews.query("score == 1").review.str.split(expand=True).stack().value_counts()
+    word_counts_negative = reviews.query("score == 0").review.str.split(expand=True).stack().value_counts()
+    # get the words unique to negative review
+    words_negative = word_counts_negative.index.difference(word_counts_positive.index)
+    words_positive = word_counts_positive.index.difference(word_counts_negative.index)
+    x = word_counts_positive[words_positive].sort_values(ascending = False).head(num_of_words).index
+    pos_words = x.to_series().apply(str.lower).values
+    # also need to pull out the punctuation
+    y = word_counts_negative[words_negative].sort_values(ascending = False).head(num_of_words).index
+    neg_words = y.to_series().apply(str.lower).values
+    return neg_words, pos_words
+
+def convert_review(review):
+    # input is a string
+    return re.sub(r'([^a-zA-Z\'\s]+?)', '', review.lower())
+
+
 '''
     INPUT: single sentence 
     OUTPUT: list of values: [negative, neutral, positive, compound]
@@ -179,29 +205,3 @@ def sentence_score(sentence_tokens, previous_token, acum_score):
 
 def sentiment_score(review):
     return sum([sentence_score(sentence, None, 0.0) for sentence in review])
-
-
-def get_score_for_word(reviews, word):
-    q = 'review.str.contains(" {} ")'.format(word)
-    return reviews.query(q).score.mean()
-
-def get_top_words(reviews, num_of_words):
-    # lets determine which "buzzwords" are more frequent 
-    word_counts = reviews.review.str.split(expand=True).stack().value_counts().to_frame()
-    
-    
-    word_counts_positive = reviews.query("score == 1").review.str.split(expand=True).stack().value_counts()
-    word_counts_negative = reviews.query("score == 0").review.str.split(expand=True).stack().value_counts()
-    # get the words unique to negative review
-    words_negative = word_counts_negative.index.difference(word_counts_positive.index)
-    words_positive = word_counts_positive.index.difference(word_counts_negative.index)
-    x = word_counts_positive[words_positive].sort_values(ascending = False).head(num_of_words).index
-    pos_words = x.to_series().apply(str.lower).values
-    # also need to pull out the punctuation
-    y = word_counts_negative[words_negative].sort_values(ascending = False).head(num_of_words).index
-    neg_words = y.to_series().apply(str.lower).values
-    return neg_words, pos_words
-
-def convert_review(review):
-    # input is a string
-    return re.sub(r'([^a-zA-Z\'\s]+?)', '', review.lower())
