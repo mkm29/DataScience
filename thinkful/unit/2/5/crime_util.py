@@ -6,6 +6,9 @@ import numpy as np
 import pandas as pd
 import statsmodels.formula.api as smf
 from sklearn.linear_model import LinearRegression
+from sklearn import linear_model
+from sklearn.cross_decomposition import PLSRegression
+from sklearn.metrics import r2_score
 from sklearn.model_selection import cross_val_score, cross_val_predict
 from scipy.stats import boxcox
 from scipy.special import inv_boxcox
@@ -13,17 +16,20 @@ from scipy.special import inv_boxcox
 
 ''' Global Variables '''
 
-model_vars = ['population_log', "population_group",  "burglary_cube_root", "larceny_theft_cube_root"]
+#model_vars = ['population_log', "population_group",  "burglary_cube_root", "larceny_theft_cube_root"]
 
 
-
-def read_data():
+def read_data(only_florida=False):
     florida = pd.read_excel('./florida_2017.xls')
     headers = ['city', 'population', 'violent_crime', 'murder', 'rape', 'robbery',
                'assault', 'property_crime', 'burglary', 'larceny_theft',
                'motor_vehicle_theft', 'arson']
     florida.columns = headers
     florida.set_index('city', inplace=True)
+    florida = florida[florida.population < florida.population.quantile(0.9)]
+    if only_florida:
+        return florida
+
 
     # read in other states for validation purposes
     ohio = pd.read_excel('./ohio_2017.xls')
@@ -42,7 +48,7 @@ def read_data():
                   'assault', 'property_crime', 'burglary', 'larceny_theft',
                   'motor_vehicle_theft', 'arson']
     # so we will want to remove some outliers
-    florida = florida[florida.population < florida.population.quantile(0.9)]
+
     michigan = michigan[michigan.population < michigan.population.quantile(0.9)]
     north_carolina = north_carolina[north_carolina.population < north_carolina.population.quantile(0.9)]
     ohio = ohio[ohio.population < ohio.population.quantile(0.9)]
@@ -129,39 +135,88 @@ def split(df):
 
 
 
-def build_model(train, test):
+def build_model(train, test, bc_lambda):
     # Now lets see how well we can predict the boxcox transform of property_crime
 
     formula = "property_crime_bc ~ " + ' + '.join(model_vars)
 
     lm1 = smf.ols(formula=formula, data=train).fit()
-    print("-----\nTRAIN\n-----\n", lm1.summary())
-    lm2 = smf.ols(formula=formula, data=test).fit()
-    print("-----\nTEST\n-----\n", lm2.summary())
+    print(lm1.summary())
+
+    pred_train = inv_boxcox(lm1.fittedvalues, bc_lambda)
+    pred_test = inv_boxcox(lm1.predict(test), bc_lambda)
+
+    resids_train = train["property_crime"] - pred_train
+    resids_test = test["property_crime"] - pred_test
+    print("RMSE: {:.4f}".format(resids_train.std()))
 
 
-    model_train = LinearRegression()
-    model_train.fit(train[model_vars], train["property_crime_bc"])
-    model_test = LinearRegression()
-    model_test.fit(test[model_vars], test["property_crime_bc"])
-    return  model_train, model_test
+    print("------\nTest\n------")
+
+    r2_test_bc = r2_score(test["property_crime_bc"], lm1.predict(test))
+    r2_test = r2_score(test["property_crime"], pred_test)
+    print("R-squared (Property Crime Box-Cox): {}".format(r2_test_bc))
+    print("R-squared (Property Crime): {}".format(r2_test))
+    print("RMSE: {:.4f}".format(resids_test.std()))
+
+
+    return lm1, pred_train, pred_test, resids_train, resids_test
+
+
+def build_evaluate_model(train, test, bc_lambda, model_vars):
+    regr = linear_model.LinearRegression()
+    regr.fit(train[model_vars], train["property_crime_bc"])
+
+    y_pred = inv_boxcox(cross_val_predict(regr, test[model_vars], test["property_crime_bc"]), bc_lambda)
+    print("R-squared (after reverse property crime Box-Cox): {:.4f}".format(r2_score(test["property_crime"], y_pred)))
+
+    resids_train = evaluate_model(regr, train, bc_lambda, "Train", model_vars)
+    resids_test = evaluate_model(regr, test, bc_lambda, "Test", model_vars)
+
+    return regr, resids_train, resids_test
 
 
 
 ''' Call this function once for the train set and once for the test set '''
 
-def evaluate_model(model, df, bc_lambda, name):
-    y_pred = cross_val_predict(model, df[model_vars], df["property_crime_bc"])
+def evaluate_model(model, df, bc_lambda, name, model_vars):
+    y_pred_bc = cross_val_predict(model, df[model_vars], df["property_crime_bc"])
     cv = cross_val_score(model, df[model_vars], df["property_crime_bc"], cv=5)
     print("{}\n-------------------------------------------------------------\n".format(name))
     print(cv)
     print("cv average is = {:.2f}%".format(cv.mean() * 100))
-    ''' return redisuals '''
-    residuals = df["property_crime"] - inv_boxcox(y_pred, bc_lambda)
+    ''' return residuals '''
 
+    print("\nBEFORE reversing predicted Box-Cox transform of property crime")
+    residuals_bc = df["property_crime_bc"] - y_pred_bc.reshape(y_pred_bc.shape[0],)
+    print("Mean Residual: {:.5f}".format(residuals_bc.mean()))
+    print("RMSE: {:.2f}".format(residuals_bc.std()))
+
+    print("\nAFTER reversing predicted Box-Cox transform of property crime")
+    y_pred = inv_boxcox(y_pred_bc, bc_lambda).reshape(y_pred_bc.shape[0],)
+
+    residuals = df["property_crime"] - y_pred
     print("Mean Residual: {}\nRMSE: {}".format(residuals.mean(), residuals.std()))
     print("Average Error: {}\n".format(np.abs(residuals).sum() / residuals.shape[0]))
 
     return residuals
+
+
+def build_evaluate_pls_model(train, test, n_components, bc_lambda, model_vars):
+    # Fit a linear model using Partial Least Squares Regression.
+    # Reduce feature space to 3 dimensions.
+    pls1 = PLSRegression(n_components=n_components)
+
+    # Reduce X to R(X) and regress on y.
+    pls1.fit(train[model_vars], train["property_crime_bc"])
+
+    # Save predicted values.
+    print('R-squared PLSR (Train):', pls1.score(train[model_vars], train["property_crime_bc"]))
+    resids_train = evaluate_model(pls1, train, bc_lambda, "Train", model_vars)
+
+    print('R-squared PLSR (Test):', pls1.score(test[model_vars], test["property_crime_bc"]))
+    resids_test = evaluate_model(pls1, test, bc_lambda, "Test", model_vars)
+
+    return pls1, resids_train, resids_test
 
 
