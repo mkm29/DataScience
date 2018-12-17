@@ -12,11 +12,14 @@ from sklearn.metrics import r2_score
 from sklearn.model_selection import cross_val_score, cross_val_predict
 from scipy.stats import boxcox
 from scipy.special import inv_boxcox
+import random
+
+random.seed(131)
 
 
 ''' Global Variables '''
 
-#model_vars = ['population_log', "population_group",  "burglary_cube_root", "larceny_theft_cube_root"]
+model_vars = ['population_log', "population_group",  "burglary_cube_root", "larceny_theft_cube_root"]
 
 
 def read_data(only_florida=False):
@@ -148,16 +151,20 @@ def build_model(train, test, bc_lambda):
 
     resids_train = train["property_crime"] - pred_train
     resids_test = test["property_crime"] - pred_test
-    print("RMSE: {:.4f}".format(resids_train.std()))
+    #print("RMSE: {:.4f}".format(resids_train.std()))
 
+    #print("------\nTrain\n------")
 
-    print("------\nTest\n------")
 
     r2_test_bc = r2_score(test["property_crime_bc"], lm1.predict(test))
     r2_test = r2_score(test["property_crime"], pred_test)
     print("R-squared (Property Crime Box-Cox): {}".format(r2_test_bc))
     print("R-squared (Property Crime): {}".format(r2_test))
-    print("RMSE: {:.4f}".format(resids_test.std()))
+    #print("------\nTest\n------")
+
+    build_evaluate_model(train, test, bc_lambda, model_vars)
+
+
 
 
     return lm1, pred_train, pred_test, resids_train, resids_test
